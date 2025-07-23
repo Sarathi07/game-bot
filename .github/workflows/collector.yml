@@ -2,7 +2,7 @@ name: Collect Game Data
 
 on:
   schedule:
-    - cron: "*/2 * * * *"  # every 2 minutes
+    - cron: "*/2 * * * *"  # Runs every 2 minutes
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11  # ✅ Updated to supported version
+          python-version: 3.11  # ✅ Use 3.11 not 3.1
 
       - name: Install dependencies
         run: |
