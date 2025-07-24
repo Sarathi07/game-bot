@@ -1,51 +1,49 @@
-# collector.py
-import requests
 import json
+import requests
 import os
-from datetime import datetime
 
-DATA_FILE = "game_data.json"
-API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S.json"
+DATA_FILE = 'game_data.json'
+API_URL = 'https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json'
 
-def fetch_latest_result():
-    try:
-        res = requests.get(API_URL)
-        data = res.json()
-        if not data or "data" not in data:
-            print("No data fetched.")
-            return
+# Fetch latest results from API
+try:
+    response = requests.get(API_URL)
+    data = response.json()
+except Exception as e:
+    print("Error fetching API:", e)
+    exit()
 
-        latest = data["data"][0]
-        period = latest.get("issue")
-        color = latest.get("color")
-        size = latest.get("size")
+# Ensure expected structure
+if 'list' not in data or not data['list']:
+    print("No data found in API response.")
+    exit()
 
-        # Load existing data
-        if os.path.exists(DATA_FILE):
-            with open(DATA_FILE, "r") as f:
-                all_data = json.load(f)
-        else:
-            all_data = []
+latest = data['list'][0]
 
-        if all_data and all_data[-1]["period"] == period:
-            print("Already up to date.")
-            return
+# Extract game info
+record = {
+    'period': latest['issue'],
+    'color': latest['color'],  # Adjust based on actual key from your data
+    'big_small': latest.get('bs', '')  # optional
+}
 
-        new_entry = {
-            "period": period,
-            "color": color,
-            "size": size,
-            "timestamp": datetime.now().isoformat()
-        }
+# Load or create data file
+if os.path.exists(DATA_FILE):
+    with open(DATA_FILE, 'r') as f:
+        try:
+            game_data = json.load(f)
+        except json.JSONDecodeError:
+            game_data = []
+else:
+    game_data = []
 
-        all_data.append(new_entry)
+# Avoid duplicates
+if not any(r['period'] == record['period'] for r in game_data):
+    game_data.append(record)
+    print(f"✔ Added new record: {record}")
+else:
+    print("ℹ No new data.")
 
-        with open(DATA_FILE, "w") as f:
-            json.dump(all_data, f, indent=2)
-
-        print(f"✅ Fetched and saved period {period}")
-
-    except Exception as e:
-        print("❌ Error fetching data:", e)
-
-fetch_latest_result()
+# Save updated list
+with open(DATA_FILE, 'w') as f:
+    json.dump(game_data, f, indent=2)
